@@ -43,7 +43,9 @@ public class DeltaStepVertexMasterCompute extends DefaultMasterCompute {
   @Override
   public void initialize() throws InstantiationException,
       IllegalAccessException {
-    registerAggregator(DeltaStepComputation.BUCKET_INDEX,
+    //registerAggregator(DeltaStepComputation.BUCKET_INDEX,
+     //   LongMinAggregator.class);
+    registerAggregator(DeltaStepVertexComputation.BUCKET_INDEX,
         LongMinAggregator.class);
   }
 }

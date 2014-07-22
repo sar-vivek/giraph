@@ -17,31 +17,26 @@
  */
 package org.apache.giraph.examples;
 
-import org.apache.giraph.graph.BasicComputation;
+import java.io.IOException;
 import org.apache.giraph.conf.LongConfOption;
-import org.apache.giraph.conf.FloatConfOption;
 import org.apache.giraph.edge.Edge;
+import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.log4j.Logger;
 
-import java.io.IOException;
-import org.apache.commons.logging.Log;
-import org.apache.log4j.Level;
-
 /**
  * Demonstrates the Delta-Stepping Shortest Path Algorithm.
  *
  * @author Vivek B Sardeshmukh
- * not complete! 
  */
 @Algorithm(
 name = "Delta-Stepping Shortest paths",
 description = "Finds all shortest paths from a selected vertex")
-public class DeltaStepComputation extends BasicComputation<
-LongWritable, DoubleWritable, FloatWritable, DoubleWritable> {
+public class DeltaStepVertexComputation extends BasicComputation<
+LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
 
     /**
      * The shortest paths id
@@ -53,16 +48,17 @@ LongWritable, DoubleWritable, FloatWritable, DoubleWritable> {
             new LongConfOption("DeltaStepVertex.delta", 1,
             "Delta value");
     /**
+     *
      * Class logger
      */
     private static final Logger LOG =
-            Logger.getLogger(DeltaStepComputation.class);
+            Logger.getLogger(DeltaStepVertexComputation.class);
     /**
      * Name of aggregator for the active bucket_index
      */
-    static final String BUCKET_INDEX = DeltaStepComputation.class.getName() + ".bucketIndexAgg";
+    static final String BUCKET_INDEX = 
+            DeltaStepVertexComputation.class.getName() + ".bucketIndexAgg";
     public long doneSuperStep;
-    public long bucketIndex;
 
     /**
      * Is this vertex the source id?
@@ -76,72 +72,94 @@ LongWritable, DoubleWritable, FloatWritable, DoubleWritable> {
 
     @Override
     public void compute(
-            Vertex<LongWritable, DoubleWritable, FloatWritable> vertex,
+            Vertex<LongWritable, DeltaVertexWritable, FloatWritable> vertex,
             Iterable<DoubleWritable> messages) throws IOException {
-        
-        //a little tweak to handle halting
-        double minDist = isSource(vertex) ? 0d : Double.MAX_VALUE - DELTA.get(getConf());
+
+        long bucketIndex;
+        DeltaVertexWritable dv;
+        double minDist = isSource(vertex) ? 0d : Double.MAX_VALUE;
+
         if (getSuperstep() == 0) {
-            doneSuperStep = Long.MAX_VALUE;
-            vertex.setValue(new DoubleWritable(minDist));
-            bucketIndex = (long) ((long)vertex.getValue().get() / DELTA.get(getConf()));
+            bucketIndex = isSource(vertex) ? 0l : Long.MAX_VALUE;
+            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, false));
             if (isSource(vertex)) {
                 for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
                     if (edge.getValue().get() <= DELTA.get(getConf())) {
-                        double distance = vertex.getValue().get() + edge.getValue().get();
-                        sendMessage(edge.getTargetVertexId(), new DoubleWritable(distance));
+                        double distance = vertex.getValue().getDist()
+                                + edge.getValue().get();
+                        sendMessage(edge.getTargetVertexId(),
+                                new DoubleWritable(distance));
                     }
                 }
             }
             aggregate(BUCKET_INDEX, new LongWritable(bucketIndex));
         }
 
-        bucketIndex = (long) ((long)vertex.getValue().get() / DELTA.get(getConf())); 
 
-        //		if (LOG.isDebugEnabled()) {
-        LOG.debug("Vertex " + vertex.getId() + " has bucketIndex = " + bucketIndex + " and vertex value = " + vertex.getValue().get() + " at superstep = " + getSuperstep() + " with doneSuperStep = " + doneSuperStep);
-        //		}
-				/* receive messages - 
+        /* receive messages - 
          * - I'm receiving messages because some neighbor called relax(v,x) 
          * - Update my tent value and bucket index
-         * - broadcast bucket index so that in the next step folks can compute which bucket to process
+         * - broadcast bucket index so that in the next step folks can compute 
+         *   which bucket to process
          */
         for (DoubleWritable message : messages) {
             minDist = Math.min(minDist, message.get());
         }
-        if (minDist < vertex.getValue().get()) {   /*relax procedure*/
-            vertex.setValue(new DoubleWritable(minDist));
+        if (minDist < vertex.getValue().getDist()) {   /*relax procedure*/
             bucketIndex = (long) ((long) minDist / DELTA.get(getConf()));
-            aggregate(BUCKET_INDEX, new LongWritable(bucketIndex));
+            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, false));
+            //  aggregate(BUCKET_INDEX, new LongWritable(bucketIndex));
         }
 
         if (getSuperstep() > 0) {
-            long minBucketIndex = ((LongWritable) getAggregatedValue(BUCKET_INDEX)).get();
-            if(minBucketIndex == Long.MAX_VALUE){
-                vertex.voteToHalt();
-                return;
-            }
-            if (bucketIndex == minBucketIndex) {				/*I belong to the bucket which is we are going to process*/
-                doneSuperStep = getSuperstep();
+
+            long minBucketIndex =
+                    ((LongWritable) getAggregatedValue(BUCKET_INDEX)).get();
+
+            if (vertex.getValue().getBucket() == minBucketIndex) {
+                /*I belong to the bucket which is we are going to process*/
                 for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
                     /*light edges*/
                     if (edge.getValue().get() <= DELTA.get(getConf())) {
-                        double distance = vertex.getValue().get() + edge.getValue().get();
-                        sendMessage(edge.getTargetVertexId(), new DoubleWritable(distance));
-                    }
-                }
-            } else if (getSuperstep() > doneSuperStep) { //heavy edges
-                for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
-                    if (edge.getValue().get() > DELTA.get(getConf())) {
-                        double distance = 
-                                vertex.getValue().get() + edge.getValue().get();
-                        sendMessage(edge.getTargetVertexId(), 
+                        double distance = vertex.getValue().getDist()
+                                + edge.getValue().get();
+                        sendMessage(edge.getTargetVertexId(),
                                 new DoubleWritable(distance));
                     }
                 }
-                doneSuperStep = Long.MAX_VALUE;
+                dv = vertex.getValue();
+                dv.setLightDone(true);
+                vertex.setValue(dv);
+            }             
+            else if ((minBucketIndex > vertex.getValue().getBucket()) && 
+                    (vertex.getValue().isLightDone())) {
+                for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
+                    if (edge.getValue().get() > DELTA.get(getConf())) {
+                        double distance = vertex.getValue().getDist()
+                                + edge.getValue().get();
+                        sendMessage(edge.getTargetVertexId(),
+                                new DoubleWritable(distance));
+                    }
+                }
+                dv = vertex.getValue();
+                dv.setDoneLight(2);
+                vertex.setValue(dv);
             }
         }
-        vertex.voteToHalt();
+
+        //		if (LOG.isDebugEnabled()) {
+        LOG.debug("Superstep " + getSuperstep() + " : " 
+                + vertex.getValue().toString());
+        //		}
+
+        if (vertex.getValue().isHeavyDone()) {
+            vertex.voteToHalt();
+            return;
+        } else if (vertex.getValue().isProcessing()){
+            aggregate(BUCKET_INDEX,
+                    new LongWritable(vertex.getValue().getBucket()));
+            vertex.voteToHalt();
+            return;
+        }
     }
 }
