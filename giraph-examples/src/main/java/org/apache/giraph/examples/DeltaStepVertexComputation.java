@@ -81,7 +81,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
 
         if (getSuperstep() == 0) {
             bucketIndex = isSource(vertex) ? 0l : Long.MAX_VALUE;
-            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, false));
+            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, 0));
             if (isSource(vertex)) {
                 for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
                     if (edge.getValue().get() <= DELTA.get(getConf())) {
@@ -107,7 +107,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
         }
         if (minDist < vertex.getValue().getDist()) {   /*relax procedure*/
             bucketIndex = (long) ((long) minDist / DELTA.get(getConf()));
-            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, false));
+            vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, 0));
             //  aggregate(BUCKET_INDEX, new LongWritable(bucketIndex));
         }
 
@@ -128,7 +128,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
                     }
                 }
                 dv = vertex.getValue();
-                dv.setLightDone(true);
+                dv.setDoneLight(1);
                 vertex.setValue(dv);
             }             
             else if ((minBucketIndex > vertex.getValue().getBucket()) && 

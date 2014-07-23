@@ -55,7 +55,7 @@ class DeltaVertexWritable implements Writable {
     
     public double getDist() { return this.dist; }
     
-    public double getBucket() { return this.bucket; }
+    public long getBucket() { return this.bucket; }
     
     public boolean isProcessing() { return this.doneLight==0?true:false; }
     
