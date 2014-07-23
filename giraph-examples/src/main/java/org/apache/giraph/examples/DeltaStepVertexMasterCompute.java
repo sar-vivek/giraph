@@ -25,7 +25,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.log4j.Logger;
 
 /**
- * Master compute associated with {@link DeltaStepComputation}. 
+ * Master compute associated with {@link DeltaStepVertexComputation}. 
  * It regigsters aggregator. 
  * @author Vivek B Sardeshmukh
  */
@@ -43,9 +43,7 @@ public class DeltaStepVertexMasterCompute extends DefaultMasterCompute {
   @Override
   public void initialize() throws InstantiationException,
       IllegalAccessException {
-    //registerAggregator(DeltaStepComputation.BUCKET_INDEX,
-     //   LongMinAggregator.class);
-    registerAggregator(DeltaStepVertexComputation.BUCKET_INDEX,
+      registerAggregator(DeltaStepVertexComputation.BUCKET_INDEX,
         LongMinAggregator.class);
   }
 }

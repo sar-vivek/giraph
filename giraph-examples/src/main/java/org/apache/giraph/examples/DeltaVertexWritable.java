@@ -75,7 +75,8 @@ public class DeltaVertexWritable implements Writable {
     } 
     @Override
     public String toString() {
-        return "(dist = " + dist + ", bucket = " + bucket + ", flag = " + 
-                doneLight + ")";
+       // return "(dist = " + dist + ", bucket = " + bucket + ", flag = " + 
+        //        doneLight + ")";
+        return  Double.toString(dist);
     }
 }

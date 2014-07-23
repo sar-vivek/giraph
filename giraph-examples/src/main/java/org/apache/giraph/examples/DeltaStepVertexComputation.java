@@ -45,7 +45,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
             new LongConfOption("DeltaStepVertex.sourceId", 1,
             "The shortest paths id");
     public static final LongConfOption DELTA =
-            new LongConfOption("DeltaStepVertex.delta", 1,
+            new LongConfOption("DeltaStepVertex.delta", 500,
             "Delta value");
     /**
      *
@@ -147,10 +147,10 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
             }
         }
 
-        //		if (LOG.isDebugEnabled()) {
-        LOG.debug("Superstep " + getSuperstep() + " : " 
-                + vertex.getValue().toString());
-        //		}
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Superstep " + getSuperstep() + " : " + 
+                    vertex.getId().get() + " : " + vertex.getValue().toString());
+        }
 
         if (vertex.getValue().isHeavyDone()) {
             vertex.voteToHalt();
@@ -158,7 +158,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
         } else if (vertex.getValue().isProcessing()){
             aggregate(BUCKET_INDEX,
                     new LongWritable(vertex.getValue().getBucket()));
-            vertex.voteToHalt();
+            //vertex.voteToHalt();
             return;
         }
     }
