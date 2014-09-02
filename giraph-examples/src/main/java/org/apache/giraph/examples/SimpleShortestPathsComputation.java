@@ -62,6 +62,10 @@ public class SimpleShortestPathsComputation extends BasicComputation<
       Iterable<DoubleWritable> messages) throws IOException {
     if (getSuperstep() == 0) {
       vertex.setValue(new DoubleWritable(Double.MAX_VALUE));
+      if (LOG.isDebugEnabled()) {
+          LOG.debug("Vertex " + vertex.getId() + 
+                  " vertex value = " + vertex.getValue());
+      }
     }
     double minDist = isSource(vertex) ? 0d : Double.MAX_VALUE;
     for (DoubleWritable message : messages) {

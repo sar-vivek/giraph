@@ -83,6 +83,7 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
             bucketIndex = isSource(vertex) ? 0l : Long.MAX_VALUE;
             vertex.setValue(new DeltaVertexWritable(minDist, bucketIndex, 0));
             if (isSource(vertex)) {
+								LOG.debug("DeltaValue is : " + DELTA.get(getConf()));
                 for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
                     if (edge.getValue().get() <= DELTA.get(getConf())) {
                         double distance = vertex.getValue().getDist()
@@ -158,7 +159,6 @@ LongWritable, DeltaVertexWritable, FloatWritable, DoubleWritable> {
         } else if (vertex.getValue().isProcessing()){
             aggregate(BUCKET_INDEX,
                     new LongWritable(vertex.getValue().getBucket()));
-            //vertex.voteToHalt();
             return;
         }
     }
