@@ -24,8 +24,8 @@ import java.util.regex.Pattern;
 import org.apache.giraph.edge.Edge;
 import org.apache.giraph.io.formats.TextVertexInputFormat;
 import org.apache.hadoop.io.DoubleWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -36,9 +36,9 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  *
  * Each line consists of: vertex_id vertex_value 
  */
-public class LongDoubleNullVertexInputFormat
+public class LongDoubleFloatVertexInputFormat
     extends
-    TextVertexInputFormat<LongWritable, DoubleWritable, NullWritable> {
+    TextVertexInputFormat<LongWritable, DoubleWritable, FloatWritable> {
   /** Separator of the vertex and neighbors */
   private static final Pattern SEPARATOR = Pattern.compile("[\t ]");
 
@@ -46,14 +46,14 @@ public class LongDoubleNullVertexInputFormat
   public TextVertexReader createVertexReader(InputSplit split,
       TaskAttemptContext context)
     throws IOException {
-    return new LongDoubleNullVertexReader();
+    return new LongDoubleFloatVertexReader();
   }
 
   /**
    * Vertex reader associated with
-   * {@link org.apache.giraph.io.formats.IntIntNullTextVertexInputFormat}.
+   * {@link org.apache.giraph.examples.LongDoubleFloatVertexInputFormat}
    */
-  public class LongDoubleNullVertexReader extends
+  public class LongDoubleFloatVertexReader extends
     TextVertexReaderFromEachLineProcessed<String[]> {
     /** Cached vertex id for the current line */
     private LongWritable id;
@@ -79,7 +79,7 @@ public class LongDoubleNullVertexInputFormat
     }
 		
     @Override
-    protected Iterable<Edge<LongWritable, NullWritable>> getEdges(String[] tokens)
+    protected Iterable<Edge<LongWritable, FloatWritable>> getEdges(String[] tokens)
       throws IOException {
       return ImmutableList.of();
     }

@@ -48,7 +48,7 @@ public class LongFloatTextEdgeInputFormat extends
 
   /**
    * {@link org.apache.giraph.io.EdgeReader} associated with
-   * {@link IntNullTextEdgeInputFormat}.
+   * {@link LongFloatTextEdgeInputFormat}.
    */
   public class LongFloatTextEdgeReader extends
       TextEdgeReaderFromEachLineProcessed<LongPair> {
