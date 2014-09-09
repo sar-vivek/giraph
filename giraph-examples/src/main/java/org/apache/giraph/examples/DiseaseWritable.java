@@ -39,8 +39,8 @@ public class DiseaseWritable implements Writable {
     
     }
     
-    public DiseaseWritable(double p){
-        this.dist = Double.MAX_VALUE;
+    public DiseaseWritable(double p, double d){
+        this.dist = d;
         this.prob = p;
     }
     
