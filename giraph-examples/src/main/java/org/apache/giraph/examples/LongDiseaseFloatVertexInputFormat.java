@@ -63,7 +63,7 @@ public class LongDiseaseFloatVertexInputFormat
     protected String[] preprocessLine(Text line) throws IOException {
       String[] tokens = SEPARATOR.split(line.toString());
       id = new LongWritable(Long.parseLong(tokens[0]));
-      value = new DiseaseWritable(Double.parseDouble(tokens[1]));
+      value = new DiseaseWritable(Double.parseDouble(tokens[1]), Double.MAX_VALUE);
       return tokens;
     }
 

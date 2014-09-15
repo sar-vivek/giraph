@@ -19,8 +19,10 @@
 package org.apache.giraph.examples;
 
 import java.io.IOException;
+import java.util.Random;
 import org.apache.giraph.conf.LongConfOption;
 import org.apache.giraph.edge.Edge;
+import org.apache.giraph.edge.MutableEdge;
 import org.apache.giraph.graph.BasicComputation;
 import org.apache.giraph.graph.Vertex;
 import org.apache.hadoop.io.DoubleWritable;
@@ -41,10 +43,12 @@ public class DiseaseSpreadSimulation extends BasicComputation<
   public static final LongConfOption SOURCE_ID =
       new LongConfOption("DiseaseSpreadSimulation.sourceId", 1,
           "seed for the disease");
+  public static final LongConfOption SEED = 
+      new LongConfOption("DiseaseSpreadSimulation.seed", 1, "seed for random");
   /** Class logger */
   private static final Logger LOG =
       Logger.getLogger(DiseaseSpreadSimulation.class);
-
+  private Random rand = new Random(SEED.get(getConf()));
   /**
    * Is this vertex the source id?
    *
@@ -55,16 +59,25 @@ public class DiseaseSpreadSimulation extends BasicComputation<
     return vertex.getId().get() == SOURCE_ID.get(getConf());
   }
   
+  private float nextGeometric(double p){
+      long geo = (long)Math.ceil(Math.log(rand.nextDouble())/Math.log(1-p));
+      return (float)geo;
+  }
   @Override
   public void compute(
       Vertex<LongWritable, DiseaseWritable, FloatWritable> vertex,
       Iterable<DoubleWritable> messages) throws IOException {
+      double prob = vertex.getValue().getProb();
     if (getSuperstep() == 0) {
-      vertex.setValue(new DiseaseWritable(vertex.getValue().getProb(), 
+      vertex.setValue(new DiseaseWritable(prob, 
               Double.MAX_VALUE));
-      if (LOG.isDebugEnabled()) {
-          LOG.debug("Vertex " + vertex.getId() + 
-                  " vertex value = " + vertex.getValue().getDist());
+      for (MutableEdge<LongWritable, FloatWritable> edge : vertex.getMutableEdges()) {
+          float distance = nextGeometric(prob);
+          edge.setValue(new FloatWritable(distance));
+          if (LOG.isDebugEnabled()) {
+              LOG.debug("Vertex " + vertex.getId() + " to " +
+                      edge.getTargetVertexId() + " = " + edge.getValue().get());
+        }
       }
     }
     double minDist = isSource(vertex) ? 0d : Double.MAX_VALUE;
@@ -73,10 +86,10 @@ public class DiseaseSpreadSimulation extends BasicComputation<
     }
     if (LOG.isDebugEnabled()) {
       LOG.debug("Vertex " + vertex.getId() + " got minDist = " + minDist +
-          " vertex value = " + vertex.getValue());
+          " vertex value = " + vertex.getValue().getDist());
     }
-    if (minDist < vertex.getValue().get()) {
-      vertex.setValue(new DoubleWritable(minDist));
+    if (minDist < vertex.getValue().getDist()) {
+      vertex.setValue(new DiseaseWritable(prob, minDist));
       for (Edge<LongWritable, FloatWritable> edge : vertex.getEdges()) {
         double distance = minDist + edge.getValue().get();
         if (LOG.isDebugEnabled()) {
@@ -88,6 +101,4 @@ public class DiseaseSpreadSimulation extends BasicComputation<
     }
     vertex.voteToHalt();
   }
-
- 
 }
