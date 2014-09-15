@@ -48,7 +48,7 @@ public class DiseaseSpreadSimulation extends BasicComputation<
   /** Class logger */
   private static final Logger LOG =
       Logger.getLogger(DiseaseSpreadSimulation.class);
-  private Random rand = new Random(SEED.get(getConf()));
+  private Random rand = new Random();
   /**
    * Is this vertex the source id?
    *
