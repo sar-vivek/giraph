@@ -69,13 +69,14 @@ public class DiseaseSpreadSimulation extends BasicComputation<
       Iterable<DoubleWritable> messages) throws IOException {
       double prob = vertex.getValue().getProb();
     if (getSuperstep() == 0) {
+        rand.setSeed(SEED.get(getConf()));
       vertex.setValue(new DiseaseWritable(prob, 
               Double.MAX_VALUE));
       for (MutableEdge<LongWritable, FloatWritable> edge : vertex.getMutableEdges()) {
           float distance = nextGeometric(prob);
           edge.setValue(new FloatWritable(distance));
           if (LOG.isDebugEnabled()) {
-              LOG.debug("Vertex " + vertex.getId() + " to " +
+              LOG.debug("VIVEK: Vertex " + vertex.getId() + " to " +
                       edge.getTargetVertexId() + " = " + edge.getValue().get());
         }
       }
